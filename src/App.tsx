@@ -1,8 +1,5 @@
-import { useEffect, useState } from 'react'
-import { BookOpen, Cloud, FileText, Image, Menu, Plus, Search, ShieldCheck, Sparkles, X } from 'lucide-react'
-import { hasSupabaseConfig, supabase } from './lib/supabase'
-
-type ConnectionState = 'checking' | 'connected' | 'needs-config' | 'error'
+import { useState } from 'react'
+import { BookOpen, FileText, Image, Menu, Plus, Search, Sparkles, X } from 'lucide-react'
 
 const quickItems = [
   { icon: Image, label: '사진', count: '0개', color: 'coral' },
@@ -12,28 +9,6 @@ const quickItems = [
 
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const [connection, setConnection] = useState<ConnectionState>('checking')
-
-  useEffect(() => {
-    let active = true
-    async function checkConnection() {
-      if (!hasSupabaseConfig || !supabase) {
-        setConnection('needs-config')
-        return
-      }
-      const { error } = await supabase.from('notes').select('id', { count: 'exact', head: true })
-      if (active) setConnection(error ? 'error' : 'connected')
-    }
-    void checkConnection()
-    return () => { active = false }
-  }, [])
-
-  const statusText = {
-    checking: '연결 확인 중',
-    connected: '클라우드 연결됨',
-    'needs-config': '환경변수 설정 필요',
-    error: '연결을 확인해주세요',
-  }[connection]
 
   return (
     <div className="app-shell">
@@ -54,10 +29,9 @@ export default function App() {
           <button className="primary-button"><Plus size={19} />새 기록 남기기</button>
         </section>
 
-        <section className="status-card" aria-live="polite">
-          <div className="status-icon"><Cloud size={20} /></div>
-          <div><strong>{statusText}</strong><span>{connection === 'connected' ? '기록이 안전하게 동기화되고 있어요.' : 'Supabase 설정을 확인하면 동기화할 수 있어요.'}</span></div>
-          <div className={`status-dot ${connection}`} />
+        <section className="welcome-card">
+          <div className="welcome-orbit"><Sparkles size={22} /></div>
+          <div><strong>나만의 보관함을 시작해보세요</strong><span>소중한 기록을 담을 준비가 되었어요.</span></div>
         </section>
 
         <section className="section-block" id="collections">
@@ -67,7 +41,7 @@ export default function App() {
 
         <section className="empty-state" id="recent"><div className="empty-art"><div className="empty-ring" /><Sparkles size={23} /></div><h3>아직 기록이 없어요</h3><p>오늘의 작은 순간부터<br />나만의 보관함을 채워보세요.</p><button className="text-button">첫 기록 만들기 <span>→</span></button></section>
       </main>
-      <footer><ShieldCheck size={15} /> 내 데이터는 안전하게 보호됩니다.</footer>
+      <footer>MY STORAGE · YOUR QUIET ARCHIVE</footer>
     </div>
   )
 }
