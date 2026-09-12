@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { BookOpen, FileText, Image, Menu, Plus, Search, Sparkles, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { BookOpen, Cloud, FileText, Image, Menu, Plus, Search, Sparkles, X } from 'lucide-react'
+import { hasSupabaseConfig, supabase } from './lib/supabase'
 
 const quickItems = [
   { icon: Image, label: '사진', count: '0개', color: 'coral' },
@@ -7,8 +8,32 @@ const quickItems = [
   { icon: BookOpen, label: '기억', count: '0개', color: 'gold' },
 ]
 
+type ConnectionState = 'checking' | 'connected' | 'needs-config' | 'error'
+
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [connection, setConnection] = useState<ConnectionState>('checking')
+
+  useEffect(() => {
+    let active = true
+    async function verifySupabase() {
+      if (!hasSupabaseConfig || !supabase) {
+        setConnection('needs-config')
+        return
+      }
+      const { error } = await supabase.from('notes').select('id', { count: 'exact', head: true })
+      if (active) setConnection(error ? 'error' : 'connected')
+    }
+    void verifySupabase()
+    return () => { active = false }
+  }, [])
+
+  const connectionLabel = {
+    checking: '클라우드 연결 확인 중',
+    connected: '클라우드 연결됨',
+    'needs-config': '환경변수 설정 필요',
+    error: '클라우드 연결 확인 필요',
+  }[connection]
 
   return (
     <div className="app-shell">
@@ -30,8 +55,9 @@ export default function App() {
         </section>
 
         <section className="welcome-card">
-          <div className="welcome-orbit"><Sparkles size={22} /></div>
-          <div><strong>나만의 보관함을 시작해보세요</strong><span>소중한 기록을 담을 준비가 되었어요.</span></div>
+          <div className="welcome-orbit"><Cloud size={22} /></div>
+          <div><strong>{connectionLabel}</strong><span>{connection === 'connected' ? '기록을 안전하게 보관할 준비가 되었어요.' : '연결 설정 후 기록을 동기화할 수 있어요.'}</span></div>
+          <div className={`status-dot ${connection}`} />
         </section>
 
         <section className="section-block" id="collections">
